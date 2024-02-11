@@ -8,7 +8,7 @@ SYNOPSIS
        [-X] [-S] [-T]  [-V] [-h] [-d] arg1 [arg2 ...]
 
 DESCRIPTION
-       rmtree can be used to remove a directory tree (recursive delete) in parallel.  Rmtree  is
+       Rmtree can be used to remove a directory tree (recursive delete) in parallel.  Rmtree  is
        written  to be a fast, multi-threaded alternative to rm -rf, with some extended function‐
        ality.  While rm(1) is single-threaded, rmtree will by default use up to 8 CPU  cores  to
        remove  files and directories in parallel.  The basic idea is to handle each subdirectory
