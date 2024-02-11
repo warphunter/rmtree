@@ -10,7 +10,7 @@ rmtree - fast, multi-threaded removal of a directory tree (recursive delete)
 [\-x] [\fB\-I \fIcount\fP] [\fB\-q\fP | \fB\-Q\fP] [\fB\-X\fP] [\fB\-S\fP] [\fB\-T\fP]  [\fB\-V\fP] [\fB\-h\fP] [\fB\-d\fP] arg1 [arg2 ...]
 
 .SH DESCRIPTION
-.B rmtree
+.B Rmtree
 can be used to remove a directory tree (recursive delete) in parallel. Rmtree is written to be a fast, multi-threaded alternative to rm -rf, with some extended functionality.  While \fBrm\fP(1) is single-threaded, rmtree will by default use up to 8 CPU cores to remove files and directories in parallel.  The basic idea is to handle each subdirectory as an independent unit, and feed a number of threads with these units.  Provided the underlying storage system is fast enough, this scheme will speed up file removal considerably.  Several options and flags can be used to remove files in a directory tree in a customized way.
 
 .SH OPTIONS
