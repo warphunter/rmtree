@@ -1,0 +1,7 @@
+#!/bin/ksh
+
+print =====================================================
+print Dry-running rmtree on current dir as a simple test...
+print =====================================================
+
+rmtree -dS .

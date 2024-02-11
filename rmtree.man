@@ -1,0 +1,177 @@
+RMTREE(1)                                 User Commands                                RMTREE(1)
+
+NAME
+       rmtree - fast, multi-threaded removal of a directory tree (recursive delete)
+
+SYNOPSIS
+       rmtree  [-t count] [-e dir ... | -E dir ... | -Z] [-m maxdepth] [-x] [-I count] [-q | -Q]
+       [-X] [-S] [-T]  [-V] [-h] [-d] arg1 [arg2 ...]
+
+DESCRIPTION
+       rmtree can be used to remove a directory tree (recursive delete) in parallel.  Rmtree  is
+       written  to be a fast, multi-threaded alternative to rm -rf, with some extended function‐
+       ality.  While rm(1) is single-threaded, rmtree will by default use up to 8 CPU  cores  to
+       remove  files and directories in parallel.  The basic idea is to handle each subdirectory
+       as an independent unit, and feed a number of threads with these units.  Provided the  un‐
+       derlying  storage system is fast enough, this scheme will speed up file removal consider‐
+       ably.  Several options and flags can be used to remove files in a  directory  tree  in  a
+       customized way.
+
+OPTIONS
+       -t count
+              Run up to count threads in parallel.
+
+              •  Must be a non-negative integer between 1 and 512.
+
+              •  Defaults to (virtual) CPU count on host, up to 8.
+
+              •  Note  that count threads will be created in addition to the main thread, so the
+                 total thread count will be count+1. The main thread won't do any hard work, and
+                 will be mostly idle.
+
+       -e dir Exclude directories matching dir from traversal.
+
+              •  Extended regular expressions are supported.
+
+              •  Any number of -e options are supported, up to command line limit.
+
+       -E dir Exclude directory dir from traversal.
+
+              •  For simplicity, only exact matches are excluded with this option.
+
+              •  Any number of -E options are supported, up to command line limit.
+
+              •  This options can't be combined with -e.
+
+              •  Hint:  Excluding  .snapshot  is  usually  desired  on (the root of) NFS mounted
+                 shares from NAS where visible snapshots are enabled.
+
+       -Z     Equivalent to -E.snapshot.
+
+              •  Just to save some typing since it is commonly needed on a NAS share.
+
+       -m maxdepth
+              Descend at most maxdepth (a positive integer) levels below the start point(s).
+
+              •  This equals the -maxdepth option to GNU find(1).
+
+       -x     Only traverse the file system(s) containing the directory/directories specified.
+
+              •  This equals the -xdev option to find(1).
+
+       -q     Organize the queue of directories as a FIFO which may be faster in some cases (de‐
+              fault is LIFO).
+
+              •  The speed difference between a LIFO and a FIFO queue is usually small.
+
+              •  Note that this option will use more memory.
+
+       -Q     Organize the queue of directories as a binary search tree sorted on inode number.
+
+              •  Using this option with a file system on a single (or mirrored) spinning disk is
+                 recommended.
+
+              •  Using it on a lun from a storage array or on SSD  or  FLASH  disk  is  probably
+                 pointless.
+
+       -X     May  be  used to speed up rmtree'ing eXtremely big directories containing millions
+              of files.
+
+              •  This option is probably just useful when the big  directories  being  traversed
+                 are cached in memory.
+
+              •  With this option, default maximum number of dirents read in one go is 100000.
+
+              •  Environment variable DIRENTS may be set to override the default.
+
+              •  This option is only supported on Linux and *BSD flavors.
+
+       -I count
+              Use count as number of subdirectories in a directory, that should be processed in-
+              line instead of processing them in separate threads.
+
+              •  Default is to process up to two subdirectories in a directory in-line.
+
+              •  If there are no more than count subdirectories, all will be processed in-line.
+
+              •  If there are more than count subdirectories, say n in  total,  the  first  n  -
+                 count will be enqueued to avoid thread starvation.
+
+              •  This is a performance option to possibly squeeze out even faster run-times.
+
+              •  Use  0  for  processing every subdirectory in a separate thread, and no in-line
+                 processing.
+
+       -d     Can be used to dry-run before actually deleting anything.  Files  and  directories
+              will just be listed on stdout, and WILL NOT be deleted.
+
+       -S     Print some stats to stderr when finished.
+
+       -T     Print  the  elapsed real time between invocation and termination of the program on
+              stderr, like time(1).
+
+       -V     Print out version and exit.
+
+       -h     Print this help text.
+
+USAGE
+       •  If no argument is specified, this help text will be printed to stdout.
+
+       •  All arguments (arg1 [arg2 ...]) should be directories or symlinks to  directories.  If
+          some  of them are not, they will be excluded, and an error message will be printed for
+          each.
+
+       •  The program has been tested on these file systems:
+
+          •  Linux: ext2, ext3, ext4, xfs, jfs, btrfs, nilfs2, f2fs, zfs, tmpfs
+
+             reiserfs, hfs plus, minix, bfs, ntfs (fuseblk), vxfs, gpfs
+
+          •  FreeBSD: ufs, zfs, devfs, ms-dos/fat
+
+          •  OpenBSD: ffs
+
+          •  NetApp (systemshell@FreeBSD): clusfs
+
+          •  MacOS: apfs
+
+          •  AIX: jfs, jfs2, ahafs
+
+          •  HP-UX: vxfs, hfs
+
+          •  Solaris: zfs, ufs, udfs
+
+          •  Windows: ntfs (MinGW, Cygwin)
+
+          •  All: nfs
+
+CREDITS
+       •  The program contains code inspired by https://github.com/xaionaro/libpftw.
+
+       •  The program makes use of heap  algorithms  derived  from  https://gist.github.com/mar‐
+          tinkunev/1365481.
+
+       •  The program makes use of a slightly modified version of https://github.com/coapp-pack‐
+          ages/libgnurx when being built for Windows (using MinGW on Linux).
+
+       •  The "rmtree" program comes with ABSOLUTELY NO WARRANTY.  This is  free  software,  and
+          you are welcome to redistribute it under certain conditions.  See the GNU General Pub‐
+          lic Licence for details.
+
+NOTES
+       •  Symlinks below the start point(s), pointing to directories, are never followed.
+
+       •  Warning: This program may impose a very high load on your storage systems when utiliz‐
+          ing many CPU cores.
+
+       •  The  "rmtree"  program  comes with ABSOLUTELY NO WARRANTY.  This is free software, and
+          you are welcome to redistribute it under certain conditions.  See the GNU General Pub‐
+          lic Licence for details.
+
+SEE ALSO
+       rm(1), time(1), xargs(1)
+
+AUTHOR
+       Rmtree was written by Jørn I. Viken, jornv@1337.no.
+
+Version 1.0                                August 2021                                 RMTREE(1)

@@ -1,0 +1,198 @@
+.TH RMTREE 1 "August 2021" "Version 1.0" "User Commands"
+
+.SH NAME
+rmtree - fast, multi-threaded removal of a directory tree (recursive delete) 
+
+.SH SYNOPSIS
+.B rmtree
+[\-t \fIcount\fP]
+[\-e \fIdir\fP ... | \fB\-E \fIdir\fP ... | \fB\-Z\fP] [\fB\-m \fImaxdepth\fP]
+[\-x] [\fB\-I \fIcount\fP] [\fB\-q\fP | \fB\-Q\fP] [\fB\-X\fP] [\fB\-S\fP] [\fB\-T\fP]  [\fB\-V\fP] [\fB\-h\fP] [\fB\-d\fP] arg1 [arg2 ...]
+
+.SH DESCRIPTION
+.B rmtree
+can be used to remove a directory tree (recursive delete) in parallel. Rmtree is written to be a fast, multi-threaded alternative to rm -rf, with some extended functionality.  While \fBrm\fP(1) is single-threaded, rmtree will by default use up to 8 CPU cores to remove files and directories in parallel.  The basic idea is to handle each subdirectory as an independent unit, and feed a number of threads with these units.  Provided the underlying storage system is fast enough, this scheme will speed up file removal considerably.  Several options and flags can be used to remove files in a directory tree in a customized way.
+
+.SH OPTIONS
+.TP
+\fB-t \fIcount\fP
+Run up to \fIcount\fP threads in parallel.
+.RS
+.IP \(bu 3
+Must be a non-negative integer between 1 and 512.
+.IP \(bu 3
+Defaults to (virtual) CPU count on host, up to 8.
+.IP \(bu 3
+Note that \fIcount\fP threads will be created in addition to the main thread,
+so the total thread count will be \fIcount+1\fP. The main thread won't do any hard work, and will be mostly idle.
+.RE
+.TP
+\fB-e \fIdir\fP
+Exclude directories matching \fIdir\fP from traversal.
+.RS
+.IP \(bu 3
+Extended regular expressions are supported.
+.IP \(bu 3
+Any number of \fB-e\fP options are supported, up to command line limit.
+.RE
+.TP
+\fB-E \fIdir\fP
+Exclude directory \fIdir\fP from traversal.
+.RS
+.IP \(bu 3
+For simplicity, only exact matches are excluded with this option.
+.IP \(bu 3
+Any number of \fB-E\fP options are supported, up to command line limit.
+.IP \(bu 3
+This options can't be combined with \fB-e\fP.
+.IP \(bu 3
+Hint: Excluding .snapshot is usually desired on (the root of) NFS mounted shares from NAS where visible snapshots are enabled.
+.RE
+.TP
+\fB-Z\fP
+Equivalent to -E.snapshot.
+.RS
+.IP \(bu 3
+Just to save some typing since it is commonly needed on a NAS share.
+.RE
+.TP
+\fB-m \fImaxdepth\fP
+Descend at most \fImaxdepth\fP (a positive integer) levels below the start point(s).
+.RS
+.IP \(bu 3
+This equals the \fB-maxdepth\fP option to GNU \fBfind\fP(1).
+.RE
+.TP
+\fB-x\fP
+Only traverse the file system(s) containing the directory/directories specified.
+.RS
+.IP \(bu 3
+This equals the \fB-xdev\fP option to \fBfind\fP(1).
+.RE
+.TP
+\fB-q\fP
+Organize the queue of directories as a FIFO which may be faster in some cases (default is LIFO).
+.RS
+.IP \(bu 3
+The speed difference between a LIFO and a FIFO queue is usually small.
+.IP \(bu 3
+Note that this option will use more memory.
+.RE
+.TP
+\fB-Q\fP
+Organize the queue of directories as a binary search tree sorted on inode number.
+.RS
+.IP \(bu 3
+Using this option with a file system on a single (or mirrored) spinning disk is recommended.
+.IP \(bu 3
+Using it on a lun from a storage array or on SSD or FLASH disk is probably pointless.
+.RE
+.TP
+\fB-X\fP
+May be used to speed up rmtree'ing eXtremely big directories containing millions of files.
+.RS
+.IP \(bu 3
+This option is probably just useful when the big directories being traversed are cached in memory.
+.IP \(bu 3
+With this option, default maximum number of dirents read in one go is 100000.
+.IP \(bu 3
+Environment variable DIRENTS may be set to override the default.
+.IP \(bu 3
+This option is only supported on Linux and *BSD flavors.
+.RE
+.TP
+\fB-I \fIcount\fP
+Use \fIcount\fR as number of subdirectories in a directory, that should be processed in-line instead of processing them in separate threads.
+.RS
+.IP \(bu 3
+Default is to process up to two subdirectories in a directory in-line.
+.IP \(bu 3
+If there are no more than \fIcount\fP subdirectories, all will be processed in-line.
+.IP \(bu 3
+If there are more than \fIcount\fP subdirectories, say \fIn\fP in total, the first \fIn\fP - \fIcount\fP will be enqueued to avoid thread starvation.
+.IP \(bu 3
+This is a performance option to possibly squeeze out even faster run-times.
+.IP \(bu 3
+Use 0 for processing every subdirectory in a separate thread, and no in-line processing.
+.RE
+.TP
+\fB-d\fP
+Can be used to dry-run before actually deleting anything. Files and directories will just be listed on stdout, and WILL NOT be deleted.
+.TP
+\fB-S\fP
+Print some stats to stderr when finished.
+.TP
+\fB-T\fP
+Print the elapsed real time between invocation and termination of the program on stderr, like time(1).
+.TP 
+\fB-V\fP
+Print out version and exit.
+.TP
+\fB-h\fP
+Print this help text.
+
+.SH USAGE
+.IP \(bu 3
+If no argument is specified, this help text will be printed to stdout.
+.IP \(bu 3
+All arguments (\fIarg1 \fR[\fIarg2\fR ...]) should be directories or symlinks to directories. If some of them are not, they will be excluded, and an error message will be printed for each.
+.IP \(bu 3
+The program has been tested on these file systems:
+.RS
+.IP \(bu 3
+Linux: ext2, ext3, ext4, xfs, jfs, btrfs, nilfs2, f2fs, zfs, tmpfs
+.IP
+reiserfs, hfs plus, minix, bfs, ntfs (fuseblk), vxfs, gpfs
+.IP \(bu 3
+FreeBSD: ufs, zfs, devfs, ms-dos/fat
+.IP \(bu 3
+OpenBSD: ffs
+.IP \(bu 3
+NetApp (systemshell@FreeBSD): clusfs
+.IP \(bu 3
+MacOS: apfs
+.IP \(bu 3
+AIX: jfs, jfs2, ahafs
+.IP \(bu 3
+HP-UX: vxfs, hfs
+.IP \(bu 3
+Solaris: zfs, ufs, udfs
+.IP \(bu 3
+Windows: ntfs (MinGW, Cygwin)
+.IP \(bu 3
+All: nfs
+.RE
+
+.RS
+.SH CREDITS
+.IP \(bu 3
+The program contains code inspired by https://github.com/xaionaro/libpftw.
+.IP \(bu 3
+The program makes use of heap algorithms derived from https://gist.github.com/martinkunev/1365481.
+.IP \(bu 3
+The program makes use of a slightly modified version of https://github.com/coapp-packages/libgnurx when being built for Windows (using MinGW on Linux).
+.IP \(bu 3
+The "\fBrmtree\fP" program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome
+to redistribute it under certain conditions.
+See the GNU General Public Licence for details.
+
+.SH NOTES
+.IP \(bu 3
+Symlinks below the start point(s), pointing to directories, are never 
+followed.
+.IP \(bu 3
+Warning: This program may impose a very high load on your storage systems when utilizing many CPU cores.
+.IP \(bu 3
+The "\fBrmtree\fP" program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome
+to redistribute it under certain conditions.
+See the GNU General Public Licence for details.
+.RS
+
+.SH SEE ALSO
+\fBrm\fP(1), \fBtime\fP(1), \fBxargs\fP(1)
+
+.SH AUTHOR
+\fBRmtree\fP was written by J\[/o]rn I. Viken, jornv@1337.no.
+
